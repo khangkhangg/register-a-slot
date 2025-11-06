@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SJC Slot Registration Bot</title>
+  <link rel="stylesheet" href="css/popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🤖 SJC Slot Bot</h1>
+      <p class="subtitle">Tự động đăng ký slot</p>
+    </div>
+
+    <!-- Status Section -->
+    <div class="status-section" id="statusSection">
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot"></span>
+        <span class="status-text" id="statusText">Chưa cấu hình</span>
+      </div>
+      <div class="attempts" id="attemptsInfo" style="display: none;">
+        <span>Lần thử: <strong id="attemptCount">0</strong></span>
+        <span>Thành công: <strong id="successCount">0</strong></span>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="config">Cấu hình</button>
+      <button class="tab-btn" data-tab="advanced">Nâng cao</button>
+      <button class="tab-btn" data-tab="about">Giới thiệu</button>
+    </div>
+
+    <!-- Configuration Tab -->
+    <div class="tab-content active" id="configTab">
+      <form id="configForm">
+        <div class="form-section">
+          <h3>📝 Thông tin cá nhân</h3>
+
+          <div class="form-group">
+            <label for="fullName">Họ và tên</label>
+            <input type="text" id="fullName" placeholder="Nguyễn Văn A" required>
+          </div>
+
+          <div class="form-group">
+            <label for="citizenId">Số CCCD</label>
+            <input type="text" id="citizenId" placeholder="031193003423" required>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>📍 Thông tin đăng ký</h3>
+
+          <div class="form-group">
+            <label for="area">Khu vực</label>
+            <select id="area" required>
+              <option value="">-- Chọn khu vực --</option>
+              <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
+              <option value="Hà Nội">Hà Nội</option>
+              <option value="Đà Nẵng">Đà Nẵng</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="transactionPoint">Điểm giao dịch</label>
+            <select id="transactionPoint" required>
+              <option value="">-- Chọn điểm giao dịch --</option>
+              <option value="TRỤ SỞ - TRUNG TÂM VÀNG BẠC ĐÁ QUÝ - SJC">TRỤ SỞ - TRUNG TÂM VÀNG BẠC ĐÁ QUÝ - SJC</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>📱 Thông báo Telegram</h3>
+
+          <div class="form-group">
+            <label for="telegramToken">Bot Token</label>
+            <input type="text" id="telegramToken" placeholder="1234567890:ABCdefGHI...">
+            <small>Tạo bot tại @BotFather trên Telegram</small>
+          </div>
+
+          <div class="form-group">
+            <label for="telegramChatId">Chat ID</label>
+            <input type="text" id="telegramChatId" placeholder="123456789">
+            <small>Gửi tin nhắn cho bot, sau đó nhấn "Lấy Chat ID"</small>
+          </div>
+
+          <button type="button" class="btn-secondary" id="getChatIdBtn">Lấy Chat ID</button>
+          <button type="button" class="btn-secondary" id="testTelegramBtn">Test Telegram</button>
+        </div>
+
+        <div class="form-section">
+          <h3>⏱️ Cài đặt thời gian</h3>
+
+          <div class="form-group">
+            <label for="beforeBotCheckDelay">Chờ trước khi click checkbox (giây)</label>
+            <input type="range" id="beforeBotCheckDelay" min="3" max="15" value="7" step="1">
+            <span id="beforeBotCheckDelayValue">7</span> giây
+          </div>
+
+          <div class="form-group">
+            <label for="retryInterval">Thử lại sau khi thất bại (phút)</label>
+            <input type="range" id="retryInterval" min="1" max="30" value="5" step="1">
+            <span id="retryIntervalValue">5</span> phút
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="autoRetry" checked>
+              Tự động thử lại khi thất bại
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">💾 Lưu cấu hình</button>
+      </form>
+    </div>
+
+    <!-- Advanced Tab -->
+    <div class="tab-content" id="advancedTab">
+      <div class="form-section">
+        <h3>🖱️ Chuyển động chuột</h3>
+
+        <div class="form-group">
+          <label for="mousePattern">Kiểu chuyển động</label>
+          <select id="mousePattern">
+            <option value="bezier">Bezier (Mượt mà)</option>
+            <option value="arc">Arc (Cung tròn)</option>
+            <option value="zigzag">Zigzag (Gấp khúc)</option>
+            <option value="random">Random (Ngẫu nhiên)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="mouseSpeed">Tốc độ</label>
+          <select id="mouseSpeed">
+            <option value="slow">Chậm</option>
+            <option value="medium" selected>Trung bình</option>
+            <option value="fast">Nhanh</option>
+            <option value="random">Ngẫu nhiên</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="complexity">Độ phức tạp</label>
+          <input type="range" id="complexity" min="1" max="10" value="5" step="1">
+          <span id="complexityValue">5</span> / 10
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="overshoot" checked>
+            Overshoot (Vượt qua mục tiêu rồi quay lại)
+          </label>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="jitter" checked>
+            Jitter (Rung tay nhẹ)
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>🎯 Hành vi</h3>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="randomPauses" checked>
+            Tạm dừng ngẫu nhiên
+          </label>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="naturalTyping" checked>
+            Gõ phím tự nhiên
+          </label>
+        </div>
+      </div>
+
+      <button type="button" class="btn-primary" id="saveAdvancedBtn">💾 Lưu cài đặt nâng cao</button>
+    </div>
+
+    <!-- About Tab -->
+    <div class="tab-content" id="aboutTab">
+      <div class="about-section">
+        <h3>📖 Về extension này</h3>
+        <p><strong>SJC Slot Registration Bot</strong></p>
+        <p>Version: 1.0.0</p>
+
+        <h4>Tính năng:</h4>
+        <ul>
+          <li>✅ Tự động điền form</li>
+          <li>✅ Chuyển động chuột giống người</li>
+          <li>✅ Tránh phát hiện bot</li>
+          <li>✅ Thông báo Telegram</li>
+          <li>✅ Tự động thử lại</li>
+        </ul>
+
+        <h4>Hướng dẫn:</h4>
+        <ol>
+          <li>Cấu hình thông tin của bạn</li>
+          <li>Mở trang đăng ký SJC</li>
+          <li>Nhấn "Bắt đầu" để chạy bot</li>
+          <li>Bot sẽ tự động điền form</li>
+        </ol>
+
+        <div class="links">
+          <a href="https://github.com/khangkhangg/register-a-slot" target="_blank">📚 Documentation</a>
+          <a href="https://github.com/khangkhangg/register-a-slot/issues" target="_blank">🐛 Report Issues</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button id="startBtn" class="btn-success" disabled>▶️ Bắt đầu</button>
+      <button id="stopBtn" class="btn-danger" style="display: none;">⏹️ Dừng lại</button>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <small>Made with ❤️ for SJC slot registration</small>
+    </div>
+  </div>
+
+  <script src="js/popup.js"></script>
+</body>
+</html>

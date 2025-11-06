@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SJC Bot Icon Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .icons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .icon-item {
+      text-align: center;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 5px;
+    }
+    .icon-item h3 {
+      margin: 10px 0 5px 0;
+      color: #666;
+      font-size: 14px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    canvas:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .instructions {
+      margin-top: 30px;
+      padding: 20px;
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      border-radius: 5px;
+    }
+    .instructions h3 {
+      margin-top: 0;
+      color: #1976d2;
+    }
+    .instructions ol {
+      margin-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 SJC Bot Icon Generator</h1>
+
+    <div class="icons">
+      <div class="icon-item">
+        <canvas id="icon16" width="16" height="16"></canvas>
+        <h3>16x16</h3>
+        <small>icon16.png</small>
+      </div>
+      <div class="icon-item">
+        <canvas id="icon32" width="32" height="32"></canvas>
+        <h3>32x32</h3>
+        <small>icon32.png</small>
+      </div>
+      <div class="icon-item">
+        <canvas id="icon48" width="48" height="48"></canvas>
+        <h3>48x48</h3>
+        <small>icon48.png</small>
+      </div>
+      <div class="icon-item">
+        <canvas id="icon128" width="128" height="128"></canvas>
+        <h3>128x128</h3>
+        <small>icon128.png</small>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <h3>How to Save Icons:</h3>
+      <ol>
+        <li>Right-click on each icon above</li>
+        <li>Select "Save Image As..." or "Save Picture As..."</li>
+        <li>Save with the exact name shown below each icon (icon16.png, icon32.png, etc.)</li>
+        <li>Place all icons in the <code>icons/</code> folder of the extension</li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    // Draw icon on canvas
+    function drawIcon(canvas) {
+      const ctx = canvas.getContext('2d');
+      const size = canvas.width;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, size, size);
+
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#667eea');
+      gradient.addColorStop(1, '#764ba2');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      // Robot face
+      ctx.fillStyle = 'white';
+
+      // Head
+      const headSize = size * 0.6;
+      const headX = (size - headSize) / 2;
+      const headY = size * 0.2;
+      ctx.fillRect(headX, headY, headSize, headSize);
+
+      // Eyes
+      ctx.fillStyle = '#667eea';
+      const eyeSize = size * 0.12;
+      const eyeY = headY + headSize * 0.35;
+      ctx.fillRect(headX + headSize * 0.25, eyeY, eyeSize, eyeSize);
+      ctx.fillRect(headX + headSize * 0.63, eyeY, eyeSize, eyeSize);
+
+      // Mouth
+      const mouthWidth = headSize * 0.4;
+      const mouthHeight = size * 0.08;
+      const mouthX = headX + (headSize - mouthWidth) / 2;
+      const mouthY = headY + headSize * 0.65;
+      ctx.fillRect(mouthX, mouthY, mouthWidth, mouthHeight);
+
+      // Antennae
+      ctx.fillStyle = 'white';
+      const antennaWidth = size * 0.08;
+      const antennaHeight = size * 0.15;
+      ctx.fillRect(headX + headSize * 0.3, headY - antennaHeight, antennaWidth, antennaHeight);
+      ctx.fillRect(headX + headSize * 0.62, headY - antennaHeight, antennaWidth, antennaHeight);
+
+      // Antenna balls
+      ctx.beginPath();
+      ctx.arc(headX + headSize * 0.34, headY - antennaHeight, antennaWidth, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(headX + headSize * 0.66, headY - antennaHeight, antennaWidth, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Generate all icons
+    ['icon16', 'icon32', 'icon48', 'icon128'].forEach(id => {
+      const canvas = document.getElementById(id);
+      drawIcon(canvas);
+
+      // Make canvas downloadable
+      canvas.addEventListener('click', function() {
+        const link = document.createElement('a');
+        link.download = id + '.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    });
+
+    // Also allow right-click save
+    document.querySelectorAll('canvas').forEach(canvas => {
+      canvas.addEventListener('contextmenu', (e) => {
+        // Allow default context menu for saving
+      });
+    });
+  </script>
+</body>
+</html>

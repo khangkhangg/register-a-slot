@@ -1,0 +1,147 @@
+/* SJC Bot Overlay */
+.sjc-bot-overlay {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 99999;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-width: 250px;
+  animation: slideInFromRight 0.5s ease-out;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(300px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.sjc-bot-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sjc-bot-overlay-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.sjc-bot-overlay-close {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.3s;
+}
+
+.sjc-bot-overlay-close:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.sjc-bot-overlay-status {
+  font-size: 13px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sjc-bot-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffc107;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.sjc-bot-overlay-progress {
+  font-size: 12px;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+.sjc-bot-overlay-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.sjc-bot-overlay-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.sjc-bot-overlay-btn:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.sjc-bot-overlay-btn.danger {
+  background: #dc3545;
+}
+
+.sjc-bot-overlay-btn.danger:hover {
+  background: #c82333;
+}
+
+/* Highlight animated elements */
+.sjc-bot-highlight {
+  outline: 2px solid #ffc107 !important;
+  outline-offset: 2px;
+  animation: highlightPulse 1s ease-in-out;
+}
+
+@keyframes highlightPulse {
+  0%, 100% { outline-color: #ffc107; }
+  50% { outline-color: #ff9800; }
+}
+
+/* Mouse cursor trail */
+.sjc-bot-cursor-trail {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #667eea;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99998;
+  animation: cursorFade 0.5s ease-out forwards;
+}
+
+@keyframes cursorFade {
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}

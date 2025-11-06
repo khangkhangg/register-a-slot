@@ -1,0 +1,366 @@
+// Popup script for SJC Slot Registration Bot
+
+// Initialize
+document.addEventListener('DOMContentLoaded', init);
+
+async function init() {
+  // Load saved configuration
+  await loadConfig();
+
+  // Setup event listeners
+  setupEventListeners();
+
+  // Setup range sliders
+  setupRangeSliders();
+
+  // Check bot status
+  await updateStatus();
+}
+
+// Setup all event listeners
+function setupEventListeners() {
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Form submission
+  document.getElementById('configForm').addEventListener('submit', saveConfig);
+
+  // Advanced settings
+  document.getElementById('saveAdvancedBtn').addEventListener('click', saveAdvancedSettings);
+
+  // Telegram buttons
+  document.getElementById('getChatIdBtn').addEventListener('click', getChatId);
+  document.getElementById('testTelegramBtn').addEventListener('click', testTelegram);
+
+  // Action buttons
+  document.getElementById('startBtn').addEventListener('click', startBot);
+  document.getElementById('stopBtn').addEventListener('click', stopBot);
+}
+
+// Setup range slider displays
+function setupRangeSliders() {
+  const sliders = [
+    { id: 'beforeBotCheckDelay', valueId: 'beforeBotCheckDelayValue' },
+    { id: 'retryInterval', valueId: 'retryIntervalValue' },
+    { id: 'complexity', valueId: 'complexityValue' }
+  ];
+
+  sliders.forEach(({ id, valueId }) => {
+    const slider = document.getElementById(id);
+    const value = document.getElementById(valueId);
+
+    slider.addEventListener('input', (e) => {
+      value.textContent = e.target.value;
+    });
+  });
+}
+
+// Switch tabs
+function switchTab(tabName) {
+  // Update buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+  // Update content
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+  document.getElementById(`${tabName}Tab`).classList.add('active');
+}
+
+// Load configuration from storage
+async function loadConfig() {
+  try {
+    const result = await chrome.storage.local.get([
+      'fullName',
+      'citizenId',
+      'area',
+      'transactionPoint',
+      'telegramToken',
+      'telegramChatId',
+      'beforeBotCheckDelay',
+      'retryInterval',
+      'autoRetry',
+      'mousePattern',
+      'mouseSpeed',
+      'complexity',
+      'overshoot',
+      'jitter',
+      'randomPauses',
+      'naturalTyping'
+    ]);
+
+    // Populate form fields
+    if (result.fullName) document.getElementById('fullName').value = result.fullName;
+    if (result.citizenId) document.getElementById('citizenId').value = result.citizenId;
+    if (result.area) document.getElementById('area').value = result.area;
+    if (result.transactionPoint) document.getElementById('transactionPoint').value = result.transactionPoint;
+    if (result.telegramToken) document.getElementById('telegramToken').value = result.telegramToken;
+    if (result.telegramChatId) document.getElementById('telegramChatId').value = result.telegramChatId;
+    if (result.beforeBotCheckDelay) document.getElementById('beforeBotCheckDelay').value = result.beforeBotCheckDelay;
+    if (result.retryInterval) document.getElementById('retryInterval').value = result.retryInterval;
+    if (result.autoRetry !== undefined) document.getElementById('autoRetry').checked = result.autoRetry;
+
+    // Advanced settings
+    if (result.mousePattern) document.getElementById('mousePattern').value = result.mousePattern;
+    if (result.mouseSpeed) document.getElementById('mouseSpeed').value = result.mouseSpeed;
+    if (result.complexity) document.getElementById('complexity').value = result.complexity;
+    if (result.overshoot !== undefined) document.getElementById('overshoot').checked = result.overshoot;
+    if (result.jitter !== undefined) document.getElementById('jitter').checked = result.jitter;
+    if (result.randomPauses !== undefined) document.getElementById('randomPauses').checked = result.randomPauses;
+    if (result.naturalTyping !== undefined) document.getElementById('naturalTyping').checked = result.naturalTyping;
+
+    // Update slider values
+    document.getElementById('beforeBotCheckDelayValue').textContent = result.beforeBotCheckDelay || 7;
+    document.getElementById('retryIntervalValue').textContent = result.retryInterval || 5;
+    document.getElementById('complexityValue').textContent = result.complexity || 5;
+
+    // Enable start button if configured
+    if (result.fullName && result.citizenId) {
+      document.getElementById('startBtn').disabled = false;
+    }
+  } catch (error) {
+    console.error('Error loading config:', error);
+    showNotification('Lỗi khi tải cấu hình', 'error');
+  }
+}
+
+// Save configuration
+async function saveConfig(e) {
+  e.preventDefault();
+
+  const config = {
+    fullName: document.getElementById('fullName').value,
+    citizenId: document.getElementById('citizenId').value,
+    area: document.getElementById('area').value,
+    transactionPoint: document.getElementById('transactionPoint').value,
+    telegramToken: document.getElementById('telegramToken').value,
+    telegramChatId: document.getElementById('telegramChatId').value,
+    beforeBotCheckDelay: parseInt(document.getElementById('beforeBotCheckDelay').value),
+    retryInterval: parseInt(document.getElementById('retryInterval').value),
+    autoRetry: document.getElementById('autoRetry').checked
+  };
+
+  try {
+    await chrome.storage.local.set(config);
+    showNotification('Đã lưu cấu hình!', 'success');
+    document.getElementById('startBtn').disabled = false;
+  } catch (error) {
+    console.error('Error saving config:', error);
+    showNotification('Lỗi khi lưu cấu hình', 'error');
+  }
+}
+
+// Save advanced settings
+async function saveAdvancedSettings() {
+  const settings = {
+    mousePattern: document.getElementById('mousePattern').value,
+    mouseSpeed: document.getElementById('mouseSpeed').value,
+    complexity: parseInt(document.getElementById('complexity').value),
+    overshoot: document.getElementById('overshoot').checked,
+    jitter: document.getElementById('jitter').checked,
+    randomPauses: document.getElementById('randomPauses').checked,
+    naturalTyping: document.getElementById('naturalTyping').checked
+  };
+
+  try {
+    await chrome.storage.local.set(settings);
+    showNotification('Đã lưu cài đặt nâng cao!', 'success');
+  } catch (error) {
+    console.error('Error saving advanced settings:', error);
+    showNotification('Lỗi khi lưu cài đặt', 'error');
+  }
+}
+
+// Get Chat ID from Telegram
+async function getChatId() {
+  const token = document.getElementById('telegramToken').value;
+
+  if (!token) {
+    showNotification('Vui lòng nhập Bot Token trước', 'error');
+    return;
+  }
+
+  showNotification('Đang lấy Chat ID...', 'info');
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
+    const data = await response.json();
+
+    if (data.ok && data.result.length > 0) {
+      const chatId = data.result[0].message.chat.id;
+      document.getElementById('telegramChatId').value = chatId;
+      showNotification(`Chat ID: ${chatId}`, 'success');
+    } else {
+      showNotification('Không tìm thấy tin nhắn. Hãy gửi tin nhắn cho bot trước!', 'error');
+    }
+  } catch (error) {
+    console.error('Error getting chat ID:', error);
+    showNotification('Lỗi khi lấy Chat ID', 'error');
+  }
+}
+
+// Test Telegram notification
+async function testTelegram() {
+  const token = document.getElementById('telegramToken').value;
+  const chatId = document.getElementById('telegramChatId').value;
+
+  if (!token || !chatId) {
+    showNotification('Vui lòng nhập đầy đủ Bot Token và Chat ID', 'error');
+    return;
+  }
+
+  showNotification('Đang gửi tin nhắn test...', 'info');
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '✅ Test thành công! SJC Slot Bot đã được cấu hình đúng.',
+        parse_mode: 'HTML'
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.ok) {
+      showNotification('Đã gửi tin nhắn test thành công!', 'success');
+    } else {
+      showNotification('Lỗi: ' + data.description, 'error');
+    }
+  } catch (error) {
+    console.error('Error testing Telegram:', error);
+    showNotification('Lỗi khi gửi tin nhắn test', 'error');
+  }
+}
+
+// Start bot
+async function startBot() {
+  try {
+    // Get current tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    // Check if on SJC website
+    if (!tab.url.includes('tructuyen.sjc.com.vn')) {
+      showNotification('Vui lòng mở trang đăng ký SJC trước!', 'error');
+      return;
+    }
+
+    // Send message to content script to start
+    await chrome.tabs.sendMessage(tab.id, { action: 'start' });
+
+    // Update UI
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'block';
+
+    // Update status
+    updateStatusDisplay('running', 'Đang chạy...');
+
+    showNotification('Đã khởi động bot!', 'success');
+  } catch (error) {
+    console.error('Error starting bot:', error);
+    showNotification('Lỗi khi khởi động bot: ' + error.message, 'error');
+  }
+}
+
+// Stop bot
+async function stopBot() {
+  try {
+    // Get current tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    // Send message to content script to stop
+    await chrome.tabs.sendMessage(tab.id, { action: 'stop' });
+
+    // Update UI
+    document.getElementById('startBtn').style.display = 'block';
+    document.getElementById('stopBtn').style.display = 'none';
+
+    // Update status
+    updateStatusDisplay('inactive', 'Đã dừng');
+
+    showNotification('Đã dừng bot!', 'success');
+  } catch (error) {
+    console.error('Error stopping bot:', error);
+    showNotification('Lỗi khi dừng bot', 'error');
+  }
+}
+
+// Update status display
+function updateStatusDisplay(state, text) {
+  const indicator = document.getElementById('statusIndicator');
+  const statusText = document.getElementById('statusText');
+
+  indicator.className = `status-indicator ${state}`;
+  statusText.textContent = text;
+}
+
+// Update status from background
+async function updateStatus() {
+  try {
+    const result = await chrome.storage.local.get(['botStatus', 'attemptCount', 'successCount']);
+
+    if (result.botStatus) {
+      updateStatusDisplay(result.botStatus.state, result.botStatus.text);
+
+      if (result.botStatus.state === 'running') {
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'block';
+      }
+    }
+
+    if (result.attemptCount || result.successCount) {
+      document.getElementById('attemptsInfo').style.display = 'flex';
+      document.getElementById('attemptCount').textContent = result.attemptCount || 0;
+      document.getElementById('successCount').textContent = result.successCount || 0;
+    }
+  } catch (error) {
+    console.error('Error updating status:', error);
+  }
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+  // Try to use Chrome notifications
+  if (chrome.notifications) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: '../icons/icon128.png',
+      title: 'SJC Slot Bot',
+      message: message
+    });
+  }
+
+  // Also show in popup
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
+
+// Listen for status updates
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action === 'statusUpdate') {
+    updateStatusDisplay(message.state, message.text);
+
+    if (message.attemptCount !== undefined) {
+      document.getElementById('attemptCount').textContent = message.attemptCount;
+    }
+
+    if (message.successCount !== undefined) {
+      document.getElementById('successCount').textContent = message.successCount;
+    }
+  }
+});

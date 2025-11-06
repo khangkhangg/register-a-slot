@@ -4,7 +4,38 @@ Automated bot for registering time slots on the SJC (Saigon Jewelry Company) web
 
 ---
 
-## ⚡ One-Command Setup (Easiest!)
+## 🚀 Choose Your Version
+
+### 🌐 Browser Extension (Recommended for Most Users!)
+
+**The easiest way to use this bot - no coding or installation required!**
+
+- ✅ **No Node.js needed** - Just load the extension in your browser
+- ✅ **Beautiful UI** - Configure everything with a simple form
+- ✅ **Visual feedback** - See the bot working in real-time
+- ✅ **One-click start** - Just click a button to run
+- ✅ **Works on Chrome, Edge, Brave, and Firefox**
+
+**📖 Quick Start Guides:**
+- **[🚀 5-Minute Quick Start (Recommended for Beginners)](QUICKSTART-EXTENSION.md)** ← Start here!
+- **[📚 Complete Extension Guide](browser-extension/README.md)** ← Full documentation
+
+---
+
+### 💻 Node.js Version (For Advanced Users)
+
+**Use this if you need email notifications or want to run on a server.**
+
+- ✅ **Email notifications** - Get notified via email
+- ✅ **Headless mode** - Run without opening browser window
+- ✅ **Server deployment** - Run on VPS or cloud servers
+- ✅ **More configuration** - Advanced settings and control
+
+**👉 [Get Started with Node.js (One-Command Setup) ↓](#-one-command-setup-nodejs-version)**
+
+---
+
+## ⚡ One-Command Setup (Node.js Version)
 
 **Get started in 3 minutes with our interactive setup:**
 
@@ -36,7 +67,10 @@ npm run setup
 
 ## 📑 Table of Contents
 
-- [One-Command Setup](#-one-command-setup-easiest)
+- [Choose Your Version](#-choose-your-version)
+  - [Browser Extension (Recommended)](#-browser-extension-recommended-for-most-users)
+  - [Node.js Version (Advanced)](#-nodejs-version-for-advanced-users)
+- [One-Command Setup (Node.js)](#-one-command-setup-nodejs-version)
 - [Features](#features)
 - [Quick Start](#-quick-start)
 - [Complete Setup Guide](#-complete-setup-guide)

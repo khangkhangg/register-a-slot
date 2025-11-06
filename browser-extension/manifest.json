@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "SJC Slot Registration Bot",
+  "version": "1.0.0",
+  "description": "Automate SJC slot registration with human-like behavior and bot detection evasion",
+  "permissions": [
+    "storage",
+    "notifications",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://tructuyen.sjc.com.vn/*",
+    "https://api.telegram.org/*"
+  ],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://tructuyen.sjc.com.vn/*"],
+      "js": ["js/content.js"],
+      "css": ["css/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["js/injected.js"],
+      "matches": ["https://tructuyen.sjc.com.vn/*"]
+    }
+  ]
+}
