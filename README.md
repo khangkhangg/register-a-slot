@@ -2,8 +2,41 @@
 
 Automated bot for registering time slots on the SJC (Saigon Jewelry Company) website with advanced bot detection evasion.
 
+---
+
+## ⚡ One-Command Setup (Easiest!)
+
+**Get started in 3 minutes with our interactive setup:**
+
+### Unix/Linux/Mac:
+```bash
+git clone https://github.com/khangkhangg/register-a-slot.git
+cd register-a-slot
+./setup.sh
+```
+
+### Windows:
+```cmd
+git clone https://github.com/khangkhangg/register-a-slot.git
+cd register-a-slot
+setup.bat
+```
+
+### Or use NPM (all platforms):
+```bash
+git clone https://github.com/khangkhangg/register-a-slot.git
+cd register-a-slot
+npm install
+npm run setup
+```
+
+**The setup script will guide you through everything!** See [SETUP.md](SETUP.md) for details.
+
+---
+
 ## 📑 Table of Contents
 
+- [One-Command Setup](#-one-command-setup-easiest)
 - [Features](#features)
 - [Quick Start](#-quick-start)
 - [Complete Setup Guide](#-complete-setup-guide)
