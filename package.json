@@ -1,0 +1,28 @@
+{
+  "name": "sjc-slot-registration-bot",
+  "version": "1.0.0",
+  "description": "Automated slot registration bot for SJC with bot detection evasion",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test:telegram": "node test-telegram.js",
+    "get:chatid": "node get-chat-id.js"
+  },
+  "keywords": [
+    "automation",
+    "puppeteer",
+    "stealth",
+    "bot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^22.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
