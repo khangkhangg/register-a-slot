@@ -7,6 +7,7 @@ import {
   humanLikeClick,
   humanLikeType,
   sendTelegramNotification,
+  sendNotifications,
   log,
   waitForElement,
   selectDropdownByText
@@ -344,60 +345,40 @@ class SlotRegistrationBot {
   }
 
   /**
-   * Send notification about registration status
+   * Send notification about registration status via all enabled channels
    */
   async sendNotification(success, message = '') {
     try {
-      if (!config.telegram.enabled || !config.telegram.chatId) {
-        log('Telegram notifications not configured', 'WARNING');
-        return;
+      // Prepare notification details
+      const details = {
+        '👤 Name': config.credentials.name,
+        '🆔 Citizen ID': config.credentials.citizenId,
+        '📍 Area': config.formData.area,
+        '🏢 Transaction Point': config.formData.transactionPoint,
+        '🔄 Attempt': `#${this.attemptCount}`
+      };
+
+      // Send notifications via all enabled channels (Telegram, Email)
+      const results = await sendNotifications(success, details, message);
+
+      // Log results
+      if (results.telegram && !results.telegram.error) {
+        log('Telegram notification sent', 'SUCCESS');
+      } else if (results.telegram && results.telegram.error) {
+        log(`Telegram notification failed: ${results.telegram.error}`, 'WARNING');
       }
 
-      const timestamp = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-
-      let notificationMessage;
-      if (success) {
-        notificationMessage = `
-🎉 <b>SJC Slot Registration - SUCCESS</b>
-
-✅ Successfully registered slot!
-
-<b>Details:</b>
-👤 Name: ${config.credentials.name}
-🆔 Citizen ID: ${config.credentials.citizenId}
-📍 Area: ${config.formData.area}
-🏢 Point: ${config.formData.transactionPoint}
-
-⏰ Time: ${timestamp}
-🔄 Attempt: #${this.attemptCount}
-`;
-      } else {
-        notificationMessage = `
-⚠️ <b>SJC Slot Registration - FAILED</b>
-
-❌ Registration attempt failed
-
-<b>Error:</b>
-${message || 'Unknown error'}
-
-<b>Details:</b>
-👤 Name: ${config.credentials.name}
-⏰ Time: ${timestamp}
-🔄 Attempt: #${this.attemptCount}
-
-🔄 Will retry shortly...
-`;
+      if (results.email && results.email.success) {
+        log('Email notification sent', 'SUCCESS');
+      } else if (results.email && results.email.error) {
+        log(`Email notification failed: ${results.email.error}`, 'WARNING');
+      } else if (results.email && results.email.skipped) {
+        log('Email notification skipped (disabled)', 'INFO');
       }
 
-      await sendTelegramNotification(
-        config.telegram.botToken,
-        config.telegram.chatId,
-        notificationMessage
-      );
-
-      log('Notification sent', 'SUCCESS');
+      return results;
     } catch (error) {
-      log(`Failed to send notification: ${error.message}`, 'ERROR');
+      log(`Failed to send notifications: ${error.message}`, 'ERROR');
     }
   }
 

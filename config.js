@@ -38,11 +38,69 @@ export default {
   // Email configuration (optional)
   email: {
     enabled: false,
-    // Add your email configuration here if needed
-    // service: "gmail",
-    // user: "your-email@gmail.com",
-    // password: "your-app-password",
-    // to: "recipient@email.com"
+
+    // Email service provider (gmail, outlook, yahoo, etc.)
+    service: "gmail", // or use 'smtp' for custom SMTP settings
+
+    // Your email credentials
+    user: "your-email@gmail.com",
+    password: "your-app-password", // For Gmail: use App Password, not regular password
+
+    // Recipient email(s) - can be string or array
+    to: "recipient@email.com", // or ["email1@example.com", "email2@example.com"]
+
+    // Optional: CC and BCC
+    cc: "", // Carbon copy
+    bcc: "", // Blind carbon copy
+
+    // Optional: Custom SMTP settings (if service is 'smtp')
+    smtp: {
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: "your-email@gmail.com",
+        pass: "your-app-password"
+      }
+    },
+
+    // Email template settings
+    template: {
+      from: '"SJC Slot Bot" <your-email@gmail.com>',
+      subjectSuccess: "✅ SJC Slot Registration - SUCCESS",
+      subjectFailure: "⚠️ SJC Slot Registration - FAILED",
+      includeDetails: true
+    }
+  },
+
+  // Mouse movement configuration
+  mouseMovement: {
+    // Movement pattern: 'bezier', 'arc', 'zigzag', 'random'
+    pattern: 'bezier',
+
+    // Speed: 'slow', 'medium', 'fast', 'random'
+    speed: 'medium',
+
+    // Curve complexity (1-10, higher = more random/human-like)
+    complexity: 5,
+
+    // Enable overshoot and correction (mouse goes past target then corrects)
+    overshoot: true,
+    overshootProbability: 0.3, // 30% chance of overshoot
+
+    // Add random micro-movements during travel
+    jitter: true,
+    jitterIntensity: 0.5, // 0-1, amount of jitter
+
+    // Pause during movement (thinking/hesitation)
+    pauseProbability: 0.2, // 20% chance of pause during movement
+    pauseDuration: [50, 300], // Random pause duration range (ms)
+
+    // Control point randomization for Bezier curves
+    bezier: {
+      controlPointDeviation: 100, // How far control points can deviate
+      useDoubleControlPoints: true // Use 4 control points instead of 2
+    }
   },
 
   // Browser configuration

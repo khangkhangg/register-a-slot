@@ -57,6 +57,26 @@ node test-telegram.js
 
 You should receive a test message on Telegram! ✅
 
+## 5.5. (Optional) Setup Email Notifications
+
+Want email notifications too? Quick setup:
+
+```bash
+# 1. Configure email in config.js
+email: {
+  enabled: true,
+  service: "gmail",
+  user: "your-email@gmail.com",
+  password: "your-app-password",  # Get from Google Account > App Passwords
+  to: "recipient@email.com"
+}
+
+# 2. Test it
+npm run test:email
+```
+
+See [FEATURES.md](FEATURES.md#email-notifications) for detailed setup.
+
 ## 6. Run the Bot
 
 ```bash

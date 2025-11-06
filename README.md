@@ -5,13 +5,17 @@ Automated bot for registering time slots on the SJC (Saigon Jewelry Company) web
 ## Features
 
 - ✅ **Bot Detection Evasion**: Uses Puppeteer Stealth plugin and human-like behavior
-- 🤖 **Human-like Interactions**: Bezier curve mouse movements, random delays, typing variations
+- 🤖 **Advanced Mouse Movement**: Multiple patterns (Bezier, Arc, Zigzag) with overshoot, jitter, and pauses
+- 🎯 **Human-like Interactions**: Natural typing with typos/corrections, random delays
 - 🔄 **Smart Retry Logic**: Configurable retry intervals (1-30 minutes)
 - 📱 **Telegram Notifications**: Real-time updates on success/failure
-- ⚙️ **Fully Configurable**: Easy configuration through `config.js`
-- 🎯 **Automatic Form Filling**: Handles complex dropdowns and bot checkboxes
+- 📧 **Email Notifications**: Beautiful HTML email reports (Gmail, Outlook, SMTP)
+- ⚙️ **Fully Configurable**: Extensive configuration through `config.js`
+- 🎨 **Automatic Form Filling**: Handles complex dropdowns and bot checkboxes
 - 🛡️ **Session Management**: Detects and handles session expiration
 - 📊 **Detailed Logging**: Color-coded logs with timestamps
+
+> 📖 **See [FEATURES.md](FEATURES.md) for detailed documentation on advanced features**
 
 ## Prerequisites
 
@@ -283,6 +287,55 @@ browser: {
   ]
 }
 ```
+
+## Advanced Features
+
+### 📧 Email Notifications
+
+The bot now supports sending beautiful HTML email notifications in addition to Telegram:
+
+```bash
+# Test email configuration
+npm run test:email
+```
+
+**Quick Setup (Gmail):**
+1. Enable 2-Step Verification
+2. Generate App Password at https://myaccount.google.com/apppasswords
+3. Update `config.js`:
+   ```javascript
+   email: {
+     enabled: true,
+     service: "gmail",
+     user: "your-email@gmail.com",
+     password: "your-app-password",  // 16-char app password
+     to: "recipient@email.com"
+   }
+   ```
+
+**📖 Full documentation:** See [FEATURES.md](FEATURES.md#email-notifications)
+
+### 🖱️ Advanced Mouse Movement Patterns
+
+Customize mouse behavior with multiple patterns:
+
+- **Bezier**: Smooth curved paths (default)
+- **Arc**: Parabolic arc motion
+- **Zigzag**: Slightly erratic movement
+- **Random**: Varies pattern each time
+
+```javascript
+mouseMovement: {
+  pattern: 'random',           // or 'bezier', 'arc', 'zigzag'
+  speed: 'medium',             // or 'slow', 'fast', 'random'
+  complexity: 7,               // 1-10, higher = more human-like
+  overshoot: true,             // Mouse overshoots target
+  jitter: true,                // Add micro-movements
+  pauseProbability: 0.25       // 25% chance of pause
+}
+```
+
+**📖 Full documentation:** See [FEATURES.md](FEATURES.md#advanced-mouse-movement-patterns)
 
 ## Advanced Configuration
 
