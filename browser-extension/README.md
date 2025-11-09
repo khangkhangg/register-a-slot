@@ -53,14 +53,37 @@ This README is comprehensive. If you just want to get started quickly, use the Q
 
 2. **Generate icons** (see Chrome instructions above)
 
-3. **Load the extension temporarily:**
+3. **Run Firefox setup script** (IMPORTANT):
+
+   Firefox requires Manifest V2, so run the setup script to switch the manifest:
+
+   **Unix/Linux/Mac:**
+   ```bash
+   cd browser-extension
+   ./setup-firefox.sh
+   ```
+
+   **Windows:**
+   ```cmd
+   cd browser-extension
+   setup-firefox.bat
+   ```
+
+   This will:
+   - Backup your Chrome manifest to `manifest-chrome.json`
+   - Copy `manifest-firefox.json` to `manifest.json`
+
+4. **Load the extension temporarily:**
    - Open Firefox
    - Go to `about:debugging#/runtime/this-firefox`
    - Click "Load Temporary Add-on"
-   - Select any file in the `browser-extension` folder
+   - Select the `manifest.json` file in the `browser-extension` folder
    - The extension will be loaded (until you close Firefox)
 
-For permanent installation in Firefox, you need to sign the extension.
+**Note:**
+- Extension will be removed when Firefox closes
+- For permanent installation in Firefox, you need to sign the extension through Mozilla
+- To switch back to Chrome: `cp manifest-chrome.json manifest.json`
 
 ## 🚀 Quick Start
 
@@ -258,6 +281,27 @@ When the bot runs, you'll see:
 - Check browser console for errors
 - Try in Incognito/Private mode
 - Reload the extension
+
+### Firefox: "background.service_worker is currently disabled"
+
+**Problem:** Error loading in Firefox: "background.service_worker is currently disabled. Add background.scripts."
+
+**Solution:**
+Firefox requires Manifest V2 (not V3). Run the Firefox setup script:
+
+**Unix/Linux/Mac:**
+```bash
+cd browser-extension
+./setup-firefox.sh
+```
+
+**Windows:**
+```cmd
+cd browser-extension
+setup-firefox.bat
+```
+
+This will automatically switch to the Firefox-compatible manifest. Then reload the extension.
 
 ### Bot Doesn't Start
 

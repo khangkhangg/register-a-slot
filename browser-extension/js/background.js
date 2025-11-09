@@ -58,10 +58,14 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 });
 
 // Handle browser action (extension icon) click
-chrome.action.onClicked.addListener((tab) => {
-  // This is handled by default_popup in manifest, but keep for fallback
-  console.log('Extension icon clicked');
-});
+// Support both Manifest V2 (browserAction) and V3 (action)
+const actionAPI = chrome.action || chrome.browserAction;
+if (actionAPI && actionAPI.onClicked) {
+  actionAPI.onClicked.addListener((tab) => {
+    // This is handled by default_popup in manifest, but keep for fallback
+    console.log('Extension icon clicked');
+  });
+}
 
 // Keep service worker alive
 let keepAliveInterval = null;

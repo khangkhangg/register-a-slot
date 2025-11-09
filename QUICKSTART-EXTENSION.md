@@ -48,11 +48,28 @@ git clone https://github.com/khangkhangg/register-a-slot.git
 
 ### For Firefox:
 
+**Important:** Firefox requires a different manifest file. Run the setup script first:
+
+**Unix/Linux/Mac:**
+```bash
+cd browser-extension
+./setup-firefox.sh
+```
+
+**Windows:**
+```cmd
+cd browser-extension
+setup-firefox.bat
+```
+
+**Then load the extension:**
 1. Open Firefox
 2. Go to `about:debugging#/runtime/this-firefox`
 3. Click "Load Temporary Add-on"
-4. Select any file in the `browser-extension` folder
+4. Select the `manifest.json` file in the `browser-extension` folder
 5. Done! (Note: Extension will be removed when you close Firefox)
+
+**To switch back to Chrome/Edge:** Run `cp manifest-chrome.json manifest.json` (or `copy manifest-chrome.json manifest.json` on Windows)
 
 ---
 
