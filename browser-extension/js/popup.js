@@ -290,17 +290,27 @@ async function startBot() {
     let targetTab = null;
     let isNewTab = false;
 
-    // Get current tab (Firefox fix: handle undefined/empty array)
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    // Get current tab (Firefox fix: use callback pattern)
+    const tabs = await new Promise((resolve) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (result) => {
+        resolve(result || []);
+      });
+    });
     const currentTab = tabs && tabs.length > 0 ? tabs[0] : null;
+    console.log('Current tab:', currentTab);
 
     // Check if current tab is on SJC website
     if (currentTab && currentTab.url && currentTab.url.includes('tructuyen.sjc.com.vn')) {
       targetTab = currentTab;
       console.log('Using current tab:', targetTab.id);
     } else {
-      // Check if SJC tab already exists
-      const allTabs = await chrome.tabs.query({ url: 'https://tructuyen.sjc.com.vn/*' });
+      // Check if SJC tab already exists (Firefox fix: use callback pattern)
+      const allTabs = await new Promise((resolve) => {
+        chrome.tabs.query({ url: 'https://tructuyen.sjc.com.vn/*' }, (result) => {
+          resolve(result || []);
+        });
+      });
+      console.log('Found SJC tabs:', allTabs.length);
 
       if (allTabs && allTabs.length > 0) {
         // Use existing SJC tab
@@ -311,11 +321,29 @@ async function startBot() {
         // Wait a bit for tab to become active
         await new Promise(resolve => setTimeout(resolve, 500));
       } else {
-        // Create new tab with SJC URL
+        // Create new tab with SJC URL (Firefox fix: use callback pattern)
+        console.log('Creating new tab with URL:', SJC_URL);
         showNotification('Đang mở trang đăng ký SJC...', 'info');
-        targetTab = await chrome.tabs.create({ url: SJC_URL, active: true });
+
+        targetTab = await new Promise((resolve, reject) => {
+          chrome.tabs.create({ url: SJC_URL, active: true }, (tab) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (!tab) {
+              reject(new Error('Tab creation returned undefined'));
+            } else {
+              resolve(tab);
+            }
+          });
+        });
+
         isNewTab = true;
-        console.log('Created new SJC tab:', targetTab.id);
+
+        if (!targetTab || !targetTab.id) {
+          throw new Error('Created tab is invalid or has no ID');
+        }
+
+        console.log('✓ Created new SJC tab:', targetTab.id);
 
         // Wait for page to load completely
         console.log('Waiting for page to load...');
@@ -343,31 +371,36 @@ async function startBot() {
       }
     }
 
+    // Verify we have a valid tab before proceeding
+    if (!targetTab || !targetTab.id) {
+      throw new Error('No valid target tab available');
+    }
+
     // Send message to content script with retry logic
-    console.log('Sending start message to tab:', targetTab.id);
+    console.log('📨 Sending start message to tab:', targetTab.id);
     let messageSuccess = false;
     let lastError = null;
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        console.log(`Attempt ${attempt} to send start message...`);
+        console.log(`  Attempt ${attempt}/3 to send start message...`);
         const response = await chrome.tabs.sendMessage(targetTab.id, { action: 'start' });
-        console.log('Content script response:', response);
+        console.log('✓ Content script response:', response);
         messageSuccess = true;
         break;
       } catch (error) {
         lastError = error;
-        console.error(`Attempt ${attempt} failed:`, error.message);
+        console.error(`  ✗ Attempt ${attempt} failed:`, error.message);
 
         if (attempt < 3) {
-          console.log('Waiting before retry...');
+          console.log('  Waiting 1 second before retry...');
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
     }
 
     if (!messageSuccess) {
-      throw new Error(`Failed to communicate with content script: ${lastError?.message || 'Unknown error'}`);
+      throw new Error(`Failed to communicate with content script after 3 attempts: ${lastError?.message || 'Unknown error'}`);
     }
 
     // Update UI
@@ -380,13 +413,14 @@ async function startBot() {
     showNotification('✅ Bot đã khởi động!', 'success');
 
     // Close popup to let content script take control
-    console.log('Bot started successfully, closing popup in 1 second...');
+    console.log('✅ Bot started successfully, closing popup in 1 second...');
     setTimeout(() => {
       window.close();
     }, 1000);
 
   } catch (error) {
-    console.error('Error starting bot:', error);
+    console.error('❌ Error starting bot:', error);
+    console.error('Error stack:', error.stack);
     showNotification('❌ Lỗi khi khởi động bot: ' + error.message, 'error');
 
     // Reset UI on error
@@ -398,8 +432,13 @@ async function startBot() {
 // Stop bot
 async function stopBot() {
   try {
-    // Get current tab (Firefox fix: handle undefined/empty array)
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    // Get current tab (Firefox fix: use callback pattern)
+    const tabs = await new Promise((resolve) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (result) => {
+        resolve(result || []);
+      });
+    });
+
     if (!tabs || tabs.length === 0) {
       showNotification('Không thể xác định tab hiện tại', 'error');
       return;
