@@ -194,48 +194,60 @@
       // Step 2: Fill citizen ID
       console.log('📝 Step 2: Filling citizen ID field...');
       updateOverlayMessage('Bước 2: Điền số CCCD...');
-      await fillInput('input[name="citizenId"], input[name="cccd"], input[placeholder*="Căn cước"]', config.citizenId);
+      await fillInput('input[name="citizenId"], input[name="cccd"], input[placeholder*="Căn cước"], input[placeholder*="cước"]', config.citizenId);
       console.log('✓ Citizen ID filled successfully');
       await randomDelay(500, 1000);
 
-      // Step 3: Select area
-      console.log('📝 Step 3: Selecting area...');
-      updateOverlayMessage('Bước 3: Chọn khu vực...');
-      await selectDropdown('select[name="area"], select[id*="area"]', config.area);
+      // Step 3: Click Login button
+      console.log('🔑 Step 3: Clicking Login button...');
+      updateOverlayMessage('Bước 3: Đăng nhập...');
+      await clickButton('button[type="submit"], input[type="submit"], button.login, button#login, .btn-login');
+      console.log('✓ Login button clicked');
+
+      // Wait for login to process and page to load
+      console.log('⏳ Waiting for login to process...');
+      updateOverlayMessage('Đang xử lý đăng nhập...');
+      await randomDelay(2000, 3000);
+      console.log('✓ Login processed');
+
+      // Step 4: Select area
+      console.log('📝 Step 4: Selecting area...');
+      updateOverlayMessage('Bước 4: Chọn khu vực...');
+      await selectDropdown('select[name="area"], select[id*="area"], select[name="province"]', config.area);
       console.log('✓ Area selected successfully');
       await randomDelay(800, 1500);
 
-      // Step 4: Select transaction point
-      console.log('📝 Step 4: Selecting transaction point...');
-      updateOverlayMessage('Bước 4: Chọn điểm giao dịch...');
-      await selectDropdown('select[name="point"], select[id*="point"]', config.transactionPoint);
+      // Step 5: Select transaction point
+      console.log('📝 Step 5: Selecting transaction point...');
+      updateOverlayMessage('Bước 5: Chọn điểm giao dịch...');
+      await selectDropdown('select[name="point"], select[id*="point"], select[name="branch"]', config.transactionPoint);
       console.log('✓ Transaction point selected successfully');
       await randomDelay(800, 1500);
 
-      // Step 5: Wait before bot checkbox
+      // Step 6: Wait before bot checkbox
       const waitTime = config.beforeBotCheckDelay * 1000;
-      console.log(`⏳ Step 5: Waiting ${config.beforeBotCheckDelay} seconds before bot check...`);
-      updateOverlayMessage(`Bước 5: Chờ ${config.beforeBotCheckDelay} giây...`);
+      console.log(`⏳ Step 6: Waiting ${config.beforeBotCheckDelay} seconds before bot check...`);
+      updateOverlayMessage(`Bước 6: Chờ ${config.beforeBotCheckDelay} giây...`);
       await sleep(waitTime);
       console.log('✓ Wait complete');
 
-      // Step 6: Click bot checkbox
-      console.log('📝 Step 6: Clicking bot checkbox...');
-      updateOverlayMessage('Bước 6: Click checkbox "Not bot"...');
+      // Step 7: Click bot checkbox
+      console.log('📝 Step 7: Clicking bot checkbox...');
+      updateOverlayMessage('Bước 7: Click checkbox "Not bot"...');
       await clickCheckbox('input[type="checkbox"]');
       console.log('✓ Checkbox clicked successfully');
       await randomDelay(1000, 2000);
 
-      // Step 7: Submit form
-      console.log('📝 Step 7: Submitting form...');
-      updateOverlayMessage('Bước 7: Gửi form...');
-      await clickButton('button[type="submit"], button:has-text("Đăng ký")');
+      // Step 8: Submit form
+      console.log('📝 Step 8: Submitting registration form...');
+      updateOverlayMessage('Bước 8: Gửi form đăng ký...');
+      await clickButton('button[type="submit"], input[type="submit"], button.register, button#register, .btn-register, .btn-submit');
       console.log('✓ Form submitted');
       await randomDelay(2000, 4000);
 
-      // Step 8: Check result
-      console.log('🔍 Step 8: Checking result...');
-      updateOverlayMessage('Bước 8: Kiểm tra kết quả...');
+      // Step 9: Check result
+      console.log('🔍 Step 9: Checking result...');
+      updateOverlayMessage('Bước 9: Kiểm tra kết quả...');
       const result = await checkResult();
       console.log('Result:', result);
 
@@ -381,12 +393,43 @@
     checkbox.classList.remove('sjc-bot-highlight');
   }
 
-  // Click button
-  async function clickButton(selector) {
-    const button = await waitForElement(selector);
+  // Click button (supports multiple selectors or text search)
+  async function clickButton(selectorOrText) {
+    let button = null;
+
+    // If it's a comma-separated list of selectors, try each one
+    const selectors = selectorOrText.split(',').map(s => s.trim());
+
+    for (const selector of selectors) {
+      // Try as CSS selector first
+      button = await waitForElement(selector, 2000);
+      if (button) {
+        console.log(`Found button with selector: ${selector}`);
+        break;
+      }
+    }
+
+    // If not found, try finding by text content
+    if (!button) {
+      console.log('Button not found by selector, searching by text...');
+      const buttons = document.querySelectorAll('button, input[type="submit"], input[type="button"], a.btn, a.button');
+      const searchTexts = ['Đăng nhập', 'Login', 'Đăng ký', 'Submit', 'Gửi'];
+
+      for (const btn of buttons) {
+        const text = btn.textContent || btn.value || '';
+        for (const searchText of searchTexts) {
+          if (text.includes(searchText)) {
+            button = btn;
+            console.log(`Found button by text: "${text}"`);
+            break;
+          }
+        }
+        if (button) break;
+      }
+    }
 
     if (!button) {
-      throw new Error(`Button not found: ${selector}`);
+      throw new Error(`Button not found: ${selectorOrText}`);
     }
 
     button.classList.add('sjc-bot-highlight');
