@@ -92,35 +92,35 @@ async function loadConfig() {
       'jitter',
       'randomPauses',
       'naturalTyping'
-    ]);
+    ]) || {}; // Firefox fix: ensure result is an object
 
-    // Populate form fields
-    if (result.fullName) document.getElementById('fullName').value = result.fullName;
-    if (result.citizenId) document.getElementById('citizenId').value = result.citizenId;
-    if (result.area) document.getElementById('area').value = result.area;
-    if (result.transactionPoint) document.getElementById('transactionPoint').value = result.transactionPoint;
-    if (result.telegramToken) document.getElementById('telegramToken').value = result.telegramToken;
-    if (result.telegramChatId) document.getElementById('telegramChatId').value = result.telegramChatId;
-    if (result.beforeBotCheckDelay) document.getElementById('beforeBotCheckDelay').value = result.beforeBotCheckDelay;
-    if (result.retryInterval) document.getElementById('retryInterval').value = result.retryInterval;
-    if (result.autoRetry !== undefined) document.getElementById('autoRetry').checked = result.autoRetry;
+    // Populate form fields (with null/undefined checks for Firefox)
+    if (result && result.fullName) document.getElementById('fullName').value = result.fullName;
+    if (result && result.citizenId) document.getElementById('citizenId').value = result.citizenId;
+    if (result && result.area) document.getElementById('area').value = result.area;
+    if (result && result.transactionPoint) document.getElementById('transactionPoint').value = result.transactionPoint;
+    if (result && result.telegramToken) document.getElementById('telegramToken').value = result.telegramToken;
+    if (result && result.telegramChatId) document.getElementById('telegramChatId').value = result.telegramChatId;
+    if (result && result.beforeBotCheckDelay) document.getElementById('beforeBotCheckDelay').value = result.beforeBotCheckDelay;
+    if (result && result.retryInterval) document.getElementById('retryInterval').value = result.retryInterval;
+    if (result && result.autoRetry !== undefined) document.getElementById('autoRetry').checked = result.autoRetry;
 
     // Advanced settings
-    if (result.mousePattern) document.getElementById('mousePattern').value = result.mousePattern;
-    if (result.mouseSpeed) document.getElementById('mouseSpeed').value = result.mouseSpeed;
-    if (result.complexity) document.getElementById('complexity').value = result.complexity;
-    if (result.overshoot !== undefined) document.getElementById('overshoot').checked = result.overshoot;
-    if (result.jitter !== undefined) document.getElementById('jitter').checked = result.jitter;
-    if (result.randomPauses !== undefined) document.getElementById('randomPauses').checked = result.randomPauses;
-    if (result.naturalTyping !== undefined) document.getElementById('naturalTyping').checked = result.naturalTyping;
+    if (result && result.mousePattern) document.getElementById('mousePattern').value = result.mousePattern;
+    if (result && result.mouseSpeed) document.getElementById('mouseSpeed').value = result.mouseSpeed;
+    if (result && result.complexity) document.getElementById('complexity').value = result.complexity;
+    if (result && result.overshoot !== undefined) document.getElementById('overshoot').checked = result.overshoot;
+    if (result && result.jitter !== undefined) document.getElementById('jitter').checked = result.jitter;
+    if (result && result.randomPauses !== undefined) document.getElementById('randomPauses').checked = result.randomPauses;
+    if (result && result.naturalTyping !== undefined) document.getElementById('naturalTyping').checked = result.naturalTyping;
 
     // Update slider values
-    document.getElementById('beforeBotCheckDelayValue').textContent = result.beforeBotCheckDelay || 7;
-    document.getElementById('retryIntervalValue').textContent = result.retryInterval || 5;
-    document.getElementById('complexityValue').textContent = result.complexity || 5;
+    document.getElementById('beforeBotCheckDelayValue').textContent = (result && result.beforeBotCheckDelay) || 7;
+    document.getElementById('retryIntervalValue').textContent = (result && result.retryInterval) || 5;
+    document.getElementById('complexityValue').textContent = (result && result.complexity) || 5;
 
     // Enable start button if configured
-    if (result.fullName && result.citizenId) {
+    if (result && result.fullName && result.citizenId) {
       document.getElementById('startBtn').disabled = false;
     }
   } catch (error) {
@@ -245,11 +245,16 @@ async function testTelegram() {
 // Start bot
 async function startBot() {
   try {
-    // Get current tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    // Get current tab (Firefox fix: handle undefined/empty array)
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tabs || tabs.length === 0) {
+      showNotification('Không thể xác định tab hiện tại', 'error');
+      return;
+    }
+    const tab = tabs[0];
 
     // Check if on SJC website
-    if (!tab.url.includes('tructuyen.sjc.com.vn')) {
+    if (!tab || !tab.url || !tab.url.includes('tructuyen.sjc.com.vn')) {
       showNotification('Vui lòng mở trang đăng ký SJC trước!', 'error');
       return;
     }
@@ -274,8 +279,13 @@ async function startBot() {
 // Stop bot
 async function stopBot() {
   try {
-    // Get current tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    // Get current tab (Firefox fix: handle undefined/empty array)
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tabs || tabs.length === 0) {
+      showNotification('Không thể xác định tab hiện tại', 'error');
+      return;
+    }
+    const tab = tabs[0];
 
     // Send message to content script to stop
     await chrome.tabs.sendMessage(tab.id, { action: 'stop' });
@@ -306,9 +316,9 @@ function updateStatusDisplay(state, text) {
 // Update status from background
 async function updateStatus() {
   try {
-    const result = await chrome.storage.local.get(['botStatus', 'attemptCount', 'successCount']);
+    const result = await chrome.storage.local.get(['botStatus', 'attemptCount', 'successCount']) || {}; // Firefox fix
 
-    if (result.botStatus) {
+    if (result && result.botStatus) {
       updateStatusDisplay(result.botStatus.state, result.botStatus.text);
 
       if (result.botStatus.state === 'running') {
@@ -317,7 +327,7 @@ async function updateStatus() {
       }
     }
 
-    if (result.attemptCount || result.successCount) {
+    if (result && (result.attemptCount || result.successCount)) {
       document.getElementById('attemptsInfo').style.display = 'flex';
       document.getElementById('attemptCount').textContent = result.attemptCount || 0;
       document.getElementById('successCount').textContent = result.successCount || 0;

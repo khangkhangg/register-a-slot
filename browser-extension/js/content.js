@@ -85,23 +85,26 @@
         'randomPauses',
         'naturalTyping'
       ], (result) => {
+        // Firefox fix: ensure result is an object
+        const config = result || {};
+
         resolve({
-          fullName: result.fullName || '',
-          citizenId: result.citizenId || '',
-          area: result.area || 'Thành phố Hồ Chí Minh',
-          transactionPoint: result.transactionPoint || 'TRỤ SỞ - TRUNG TÂM VÀNG BẠC ĐÁ QUÝ - SJC',
-          telegramToken: result.telegramToken || '',
-          telegramChatId: result.telegramChatId || '',
-          beforeBotCheckDelay: result.beforeBotCheckDelay || 7,
-          retryInterval: result.retryInterval || 5,
-          autoRetry: result.autoRetry !== undefined ? result.autoRetry : true,
-          mousePattern: result.mousePattern || 'bezier',
-          mouseSpeed: result.mouseSpeed || 'medium',
-          complexity: result.complexity || 5,
-          overshoot: result.overshoot !== undefined ? result.overshoot : true,
-          jitter: result.jitter !== undefined ? result.jitter : true,
-          randomPauses: result.randomPauses !== undefined ? result.randomPauses : true,
-          naturalTyping: result.naturalTyping !== undefined ? result.naturalTyping : true
+          fullName: config.fullName || '',
+          citizenId: config.citizenId || '',
+          area: config.area || 'Thành phố Hồ Chí Minh',
+          transactionPoint: config.transactionPoint || 'TRỤ SỞ - TRUNG TÂM VÀNG BẠC ĐÁ QUÝ - SJC',
+          telegramToken: config.telegramToken || '',
+          telegramChatId: config.telegramChatId || '',
+          beforeBotCheckDelay: config.beforeBotCheckDelay || 7,
+          retryInterval: config.retryInterval || 5,
+          autoRetry: config.autoRetry !== undefined ? config.autoRetry : true,
+          mousePattern: config.mousePattern || 'bezier',
+          mouseSpeed: config.mouseSpeed || 'medium',
+          complexity: config.complexity || 5,
+          overshoot: config.overshoot !== undefined ? config.overshoot : true,
+          jitter: config.jitter !== undefined ? config.jitter : true,
+          randomPauses: config.randomPauses !== undefined ? config.randomPauses : true,
+          naturalTyping: config.naturalTyping !== undefined ? config.naturalTyping : true
         });
       });
     });
