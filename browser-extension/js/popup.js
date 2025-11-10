@@ -75,24 +75,31 @@ function switchTab(tabName) {
 // Load configuration from storage
 async function loadConfig() {
   try {
-    const result = await chrome.storage.local.get([
-      'fullName',
-      'citizenId',
-      'area',
-      'transactionPoint',
-      'telegramToken',
-      'telegramChatId',
-      'beforeBotCheckDelay',
-      'retryInterval',
-      'autoRetry',
-      'mousePattern',
-      'mouseSpeed',
-      'complexity',
-      'overshoot',
-      'jitter',
-      'randomPauses',
-      'naturalTyping'
-    ]) || {}; // Firefox fix: ensure result is an object
+    // Use callback pattern for Firefox compatibility
+    const result = await new Promise((resolve) => {
+      chrome.storage.local.get([
+        'fullName',
+        'citizenId',
+        'area',
+        'transactionPoint',
+        'telegramToken',
+        'telegramChatId',
+        'beforeBotCheckDelay',
+        'retryInterval',
+        'autoRetry',
+        'mousePattern',
+        'mouseSpeed',
+        'complexity',
+        'overshoot',
+        'jitter',
+        'randomPauses',
+        'naturalTyping'
+      ], (items) => {
+        resolve(items || {}); // Firefox fix: ensure result is an object
+      });
+    });
+
+    console.log('Loaded configuration:', result);
 
     // Populate form fields (with null/undefined checks for Firefox)
     if (result && result.fullName) document.getElementById('fullName').value = result.fullName;
@@ -145,13 +152,30 @@ async function saveConfig(e) {
     autoRetry: document.getElementById('autoRetry').checked
   };
 
+  console.log('Saving configuration:', config);
+
   try {
-    await chrome.storage.local.set(config);
+    // Use callback for Firefox compatibility
+    await new Promise((resolve, reject) => {
+      chrome.storage.local.set(config, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    console.log('Configuration saved successfully');
     showNotification('Đã lưu cấu hình!', 'success');
     document.getElementById('startBtn').disabled = false;
+
+    // Verify save by reading back
+    const saved = await chrome.storage.local.get(Object.keys(config));
+    console.log('Verified saved config:', saved);
   } catch (error) {
     console.error('Error saving config:', error);
-    showNotification('Lỗi khi lưu cấu hình', 'error');
+    showNotification('Lỗi khi lưu cấu hình: ' + error.message, 'error');
   }
 }
 
@@ -167,12 +191,29 @@ async function saveAdvancedSettings() {
     naturalTyping: document.getElementById('naturalTyping').checked
   };
 
+  console.log('Saving advanced settings:', settings);
+
   try {
-    await chrome.storage.local.set(settings);
+    // Use callback for Firefox compatibility
+    await new Promise((resolve, reject) => {
+      chrome.storage.local.set(settings, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    console.log('Advanced settings saved successfully');
     showNotification('Đã lưu cài đặt nâng cao!', 'success');
+
+    // Verify save
+    const saved = await chrome.storage.local.get(Object.keys(settings));
+    console.log('Verified saved settings:', saved);
   } catch (error) {
     console.error('Error saving advanced settings:', error);
-    showNotification('Lỗi khi lưu cài đặt', 'error');
+    showNotification('Lỗi khi lưu cài đặt: ' + error.message, 'error');
   }
 }
 
@@ -245,22 +286,58 @@ async function testTelegram() {
 // Start bot
 async function startBot() {
   try {
+    const SJC_URL = 'https://tructuyen.sjc.com.vn/dang-nhap';
+    let targetTab = null;
+
     // Get current tab (Firefox fix: handle undefined/empty array)
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tabs || tabs.length === 0) {
-      showNotification('Không thể xác định tab hiện tại', 'error');
-      return;
-    }
-    const tab = tabs[0];
+    const currentTab = tabs && tabs.length > 0 ? tabs[0] : null;
 
-    // Check if on SJC website
-    if (!tab || !tab.url || !tab.url.includes('tructuyen.sjc.com.vn')) {
-      showNotification('Vui lòng mở trang đăng ký SJC trước!', 'error');
-      return;
+    // Check if current tab is on SJC website
+    if (currentTab && currentTab.url && currentTab.url.includes('tructuyen.sjc.com.vn')) {
+      targetTab = currentTab;
+      console.log('Using current tab:', targetTab.id);
+    } else {
+      // Check if SJC tab already exists
+      const allTabs = await chrome.tabs.query({ url: 'https://tructuyen.sjc.com.vn/*' });
+
+      if (allTabs && allTabs.length > 0) {
+        // Use existing SJC tab
+        targetTab = allTabs[0];
+        await chrome.tabs.update(targetTab.id, { active: true });
+        console.log('Switching to existing SJC tab:', targetTab.id);
+        showNotification('Chuyển sang tab SJC hiện có...', 'info');
+      } else {
+        // Create new tab with SJC URL
+        showNotification('Đang mở trang đăng ký SJC...', 'info');
+        targetTab = await chrome.tabs.create({ url: SJC_URL, active: true });
+        console.log('Created new SJC tab:', targetTab.id);
+
+        // Wait for page to load
+        await new Promise((resolve) => {
+          const listener = (tabId, changeInfo) => {
+            if (tabId === targetTab.id && changeInfo.status === 'complete') {
+              chrome.tabs.onUpdated.removeListener(listener);
+              resolve();
+            }
+          };
+          chrome.tabs.onUpdated.addListener(listener);
+
+          // Timeout after 30 seconds
+          setTimeout(() => {
+            chrome.tabs.onUpdated.removeListener(listener);
+            resolve();
+          }, 30000);
+        });
+
+        console.log('Page loaded, waiting 2 seconds for content script...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
 
     // Send message to content script to start
-    await chrome.tabs.sendMessage(tab.id, { action: 'start' });
+    console.log('Sending start message to tab:', targetTab.id);
+    await chrome.tabs.sendMessage(targetTab.id, { action: 'start' });
 
     // Update UI
     document.getElementById('startBtn').style.display = 'none';
@@ -316,7 +393,12 @@ function updateStatusDisplay(state, text) {
 // Update status from background
 async function updateStatus() {
   try {
-    const result = await chrome.storage.local.get(['botStatus', 'attemptCount', 'successCount']) || {}; // Firefox fix
+    // Use callback pattern for Firefox compatibility
+    const result = await new Promise((resolve) => {
+      chrome.storage.local.get(['botStatus', 'attemptCount', 'successCount'], (items) => {
+        resolve(items || {}); // Firefox fix
+      });
+    });
 
     if (result && result.botStatus) {
       updateStatusDisplay(result.botStatus.state, result.botStatus.text);
