@@ -11,16 +11,24 @@
   let successCount = 0;
 
   // Initialize
-  console.log('SJC Slot Bot: Content script loaded');
+  console.log('🤖 SJC Slot Bot: Content script loaded and ready');
+  console.log('📍 Current URL:', window.location.href);
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('📨 Received message from popup:', message);
+
     if (message.action === 'start') {
+      console.log('▶️ START command received, initiating bot...');
       startBot();
       sendResponse({ status: 'started' });
     } else if (message.action === 'stop') {
+      console.log('⏹️ STOP command received, stopping bot...');
       stopBot();
       sendResponse({ status: 'stopped' });
+    } else {
+      console.log('❓ Unknown action:', message.action);
+      sendResponse({ status: 'unknown' });
     }
     return true;
   });
@@ -28,26 +36,36 @@
   // Start bot
   async function startBot() {
     if (isRunning) {
-      console.log('Bot is already running');
+      console.log('⚠️ Bot is already running, ignoring start request');
       return;
     }
 
     isRunning = true;
-    console.log('Starting bot...');
+    console.log('✅ Starting bot...');
 
     // Load configuration
+    console.log('📋 Loading configuration from storage...');
     config = await loadConfig();
+    console.log('📋 Configuration loaded:', {
+      fullName: config.fullName,
+      citizenId: config.citizenId ? '***' + config.citizenId.slice(-4) : 'not set',
+      area: config.area,
+      transactionPoint: config.transactionPoint
+    });
 
     if (!config.fullName || !config.citizenId) {
+      console.error('❌ Configuration incomplete!');
       showOverlayMessage('Lỗi: Chưa cấu hình đầy đủ thông tin', 'error');
       isRunning = false;
       return;
     }
 
     // Create overlay
+    console.log('🎨 Creating overlay...');
     createOverlay();
 
     // Run bot
+    console.log('🚀 Running bot automation...');
     await runBot();
   }
 
@@ -162,47 +180,64 @@
   async function runBot() {
     try {
       attemptCount++;
+      console.log(`\n🎯 Starting attempt #${attemptCount}`);
       updateStatus('running', `Đang chạy (lần ${attemptCount})`);
       updateOverlayMessage(`Bắt đầu lần thử #${attemptCount}`);
 
       // Step 1: Fill name
+      console.log('📝 Step 1: Filling name field...');
       updateOverlayMessage('Bước 1: Điền họ tên...');
       await fillInput('input[name="name"], input[placeholder*="Họ và tên"], input[id*="name"]', config.fullName);
+      console.log('✓ Name filled successfully');
       await randomDelay(500, 1000);
 
       // Step 2: Fill citizen ID
+      console.log('📝 Step 2: Filling citizen ID field...');
       updateOverlayMessage('Bước 2: Điền số CCCD...');
       await fillInput('input[name="citizenId"], input[name="cccd"], input[placeholder*="Căn cước"]', config.citizenId);
+      console.log('✓ Citizen ID filled successfully');
       await randomDelay(500, 1000);
 
       // Step 3: Select area
+      console.log('📝 Step 3: Selecting area...');
       updateOverlayMessage('Bước 3: Chọn khu vực...');
       await selectDropdown('select[name="area"], select[id*="area"]', config.area);
+      console.log('✓ Area selected successfully');
       await randomDelay(800, 1500);
 
       // Step 4: Select transaction point
+      console.log('📝 Step 4: Selecting transaction point...');
       updateOverlayMessage('Bước 4: Chọn điểm giao dịch...');
       await selectDropdown('select[name="point"], select[id*="point"]', config.transactionPoint);
+      console.log('✓ Transaction point selected successfully');
       await randomDelay(800, 1500);
 
       // Step 5: Wait before bot checkbox
       const waitTime = config.beforeBotCheckDelay * 1000;
+      console.log(`⏳ Step 5: Waiting ${config.beforeBotCheckDelay} seconds before bot check...`);
       updateOverlayMessage(`Bước 5: Chờ ${config.beforeBotCheckDelay} giây...`);
       await sleep(waitTime);
+      console.log('✓ Wait complete');
 
       // Step 6: Click bot checkbox
+      console.log('📝 Step 6: Clicking bot checkbox...');
       updateOverlayMessage('Bước 6: Click checkbox "Not bot"...');
       await clickCheckbox('input[type="checkbox"]');
+      console.log('✓ Checkbox clicked successfully');
       await randomDelay(1000, 2000);
 
       // Step 7: Submit form
+      console.log('📝 Step 7: Submitting form...');
       updateOverlayMessage('Bước 7: Gửi form...');
       await clickButton('button[type="submit"], button:has-text("Đăng ký")');
+      console.log('✓ Form submitted');
       await randomDelay(2000, 4000);
 
       // Step 8: Check result
+      console.log('🔍 Step 8: Checking result...');
       updateOverlayMessage('Bước 8: Kiểm tra kết quả...');
       const result = await checkResult();
+      console.log('Result:', result);
 
       if (result.success) {
         successCount++;

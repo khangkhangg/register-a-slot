@@ -288,6 +288,7 @@ async function startBot() {
   try {
     const SJC_URL = 'https://tructuyen.sjc.com.vn/dang-nhap';
     let targetTab = null;
+    let isNewTab = false;
 
     // Get current tab (Firefox fix: handle undefined/empty array)
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -307,16 +308,21 @@ async function startBot() {
         await chrome.tabs.update(targetTab.id, { active: true });
         console.log('Switching to existing SJC tab:', targetTab.id);
         showNotification('Chuyển sang tab SJC hiện có...', 'info');
+        // Wait a bit for tab to become active
+        await new Promise(resolve => setTimeout(resolve, 500));
       } else {
         // Create new tab with SJC URL
         showNotification('Đang mở trang đăng ký SJC...', 'info');
         targetTab = await chrome.tabs.create({ url: SJC_URL, active: true });
+        isNewTab = true;
         console.log('Created new SJC tab:', targetTab.id);
 
-        // Wait for page to load
+        // Wait for page to load completely
+        console.log('Waiting for page to load...');
         await new Promise((resolve) => {
-          const listener = (tabId, changeInfo) => {
+          const listener = (tabId, changeInfo, tab) => {
             if (tabId === targetTab.id && changeInfo.status === 'complete') {
+              console.log('Page load complete, URL:', tab.url);
               chrome.tabs.onUpdated.removeListener(listener);
               resolve();
             }
@@ -326,18 +332,43 @@ async function startBot() {
           // Timeout after 30 seconds
           setTimeout(() => {
             chrome.tabs.onUpdated.removeListener(listener);
+            console.log('Page load timeout, continuing anyway...');
             resolve();
           }, 30000);
         });
 
-        console.log('Page loaded, waiting 2 seconds for content script...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Extra wait for content script injection and initialization
+        console.log('Waiting for content script to initialize...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
     }
 
-    // Send message to content script to start
+    // Send message to content script with retry logic
     console.log('Sending start message to tab:', targetTab.id);
-    await chrome.tabs.sendMessage(targetTab.id, { action: 'start' });
+    let messageSuccess = false;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Attempt ${attempt} to send start message...`);
+        const response = await chrome.tabs.sendMessage(targetTab.id, { action: 'start' });
+        console.log('Content script response:', response);
+        messageSuccess = true;
+        break;
+      } catch (error) {
+        lastError = error;
+        console.error(`Attempt ${attempt} failed:`, error.message);
+
+        if (attempt < 3) {
+          console.log('Waiting before retry...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    if (!messageSuccess) {
+      throw new Error(`Failed to communicate with content script: ${lastError?.message || 'Unknown error'}`);
+    }
 
     // Update UI
     document.getElementById('startBtn').style.display = 'none';
@@ -346,10 +377,21 @@ async function startBot() {
     // Update status
     updateStatusDisplay('running', 'Đang chạy...');
 
-    showNotification('Đã khởi động bot!', 'success');
+    showNotification('✅ Bot đã khởi động!', 'success');
+
+    // Close popup to let content script take control
+    console.log('Bot started successfully, closing popup in 1 second...');
+    setTimeout(() => {
+      window.close();
+    }, 1000);
+
   } catch (error) {
     console.error('Error starting bot:', error);
-    showNotification('Lỗi khi khởi động bot: ' + error.message, 'error');
+    showNotification('❌ Lỗi khi khởi động bot: ' + error.message, 'error');
+
+    // Reset UI on error
+    document.getElementById('startBtn').style.display = 'block';
+    document.getElementById('stopBtn').style.display = 'none';
   }
 }
 
