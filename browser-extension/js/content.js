@@ -94,6 +94,7 @@
         'telegramChatId',
         'beforeBotCheckDelay',
         'retryInterval',
+        'nextRegistrationTime',
         'autoRetry',
         'mousePattern',
         'mouseSpeed',
@@ -115,6 +116,7 @@
           telegramChatId: config.telegramChatId || '',
           beforeBotCheckDelay: config.beforeBotCheckDelay || 7,
           retryInterval: config.retryInterval || 5,
+          nextRegistrationTime: config.nextRegistrationTime || '09:00',
           autoRetry: config.autoRetry !== undefined ? config.autoRetry : true,
           mousePattern: config.mousePattern || 'bezier',
           mouseSpeed: config.mouseSpeed || 'medium',
@@ -263,19 +265,19 @@
         // Send Telegram notification
         await sendTelegramNotification(true, 'Đăng ký slot thành công!');
 
-        // Wait 24 hours for next day's registration (limit: 1 per day)
+        // Wait until specified time for next day's registration (limit: 1 per day)
         if (isRunning) {
-          const retryHours = 24;
-          const retryTime = retryHours * 60 * 60 * 1000; // 24 hours
-          const nextAttemptTime = new Date(Date.now() + retryTime);
+          const { waitTime, targetDate } = calculateWaitTimeUntilNextRegistration(config.nextRegistrationTime);
+          const waitHours = (waitTime / (1000 * 60 * 60)).toFixed(1);
 
-          console.log(`⏰ Success! Next registration in ${retryHours} hours (${nextAttemptTime.toLocaleString()})`);
-          updateOverlayMessage(`✅ Thành công! Đăng ký tiếp theo vào ${nextAttemptTime.toLocaleTimeString()} ngày ${nextAttemptTime.toLocaleDateString()}`);
+          console.log(`⏰ Success! Next registration at ${config.nextRegistrationTime} (${targetDate.toLocaleString()})`);
+          console.log(`⏰ Waiting ${waitHours} hours...`);
+          updateOverlayMessage(`✅ Thành công! Đăng ký tiếp theo vào ${targetDate.toLocaleTimeString()} ngày ${targetDate.toLocaleDateString()}`);
 
-          await sleep(retryTime);
+          await sleep(waitTime);
 
           if (isRunning) {
-            console.log('🔄 Starting tomorrow\'s registration...');
+            console.log('🔄 Starting next registration...');
             window.location.reload();
           }
         } else {
@@ -741,6 +743,29 @@
   function randomDelay(min, max) {
     const delay = Math.floor(Math.random() * (max - min + 1)) + min;
     return sleep(delay);
+  }
+
+  // Helper: Calculate wait time until next scheduled time
+  function calculateWaitTimeUntilNextRegistration(timeString) {
+    // Parse the time string (format: "HH:MM")
+    const [hours, minutes] = timeString.split(':').map(num => parseInt(num, 10));
+
+    const now = new Date();
+    const targetTime = new Date();
+    targetTime.setHours(hours, minutes, 0, 0);
+
+    // If target time has already passed today, schedule for tomorrow
+    if (targetTime <= now) {
+      targetTime.setDate(targetTime.getDate() + 1);
+    }
+
+    // Calculate milliseconds until target time
+    const waitTime = targetTime.getTime() - now.getTime();
+
+    return {
+      waitTime: waitTime,
+      targetDate: targetTime
+    };
   }
 
 })();

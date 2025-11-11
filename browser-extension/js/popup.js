@@ -86,6 +86,7 @@ async function loadConfig() {
         'telegramChatId',
         'beforeBotCheckDelay',
         'retryInterval',
+        'nextRegistrationTime',
         'autoRetry',
         'mousePattern',
         'mouseSpeed',
@@ -110,6 +111,7 @@ async function loadConfig() {
     if (result && result.telegramChatId) document.getElementById('telegramChatId').value = result.telegramChatId;
     if (result && result.beforeBotCheckDelay) document.getElementById('beforeBotCheckDelay').value = result.beforeBotCheckDelay;
     if (result && result.retryInterval) document.getElementById('retryInterval').value = result.retryInterval;
+    if (result && result.nextRegistrationTime) document.getElementById('nextRegistrationTime').value = result.nextRegistrationTime;
     if (result && result.autoRetry !== undefined) document.getElementById('autoRetry').checked = result.autoRetry;
 
     // Advanced settings
@@ -149,6 +151,7 @@ async function saveConfig(e) {
     telegramChatId: document.getElementById('telegramChatId').value,
     beforeBotCheckDelay: parseInt(document.getElementById('beforeBotCheckDelay').value),
     retryInterval: parseInt(document.getElementById('retryInterval').value),
+    nextRegistrationTime: document.getElementById('nextRegistrationTime').value,
     autoRetry: document.getElementById('autoRetry').checked
   };
 
