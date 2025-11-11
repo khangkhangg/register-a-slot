@@ -258,6 +258,7 @@
         successCount++;
         updateOverlayMessage('✅ Đăng ký thành công!');
         updateStatus('success', 'Thành công!');
+        console.log('🎉 SUCCESS! Registration completed successfully!');
 
         // Send Telegram notification
         await sendTelegramNotification(true, 'Đăng ký slot thành công!');
@@ -268,20 +269,26 @@
         }, 5000);
 
       } else {
+        console.error('❌ Registration failed:', result.error);
         updateOverlayMessage('❌ Thất bại: ' + result.error);
         updateStatus('error', 'Thất bại');
 
         // Send Telegram notification
         await sendTelegramNotification(false, result.error);
 
-        // Retry if enabled
-        if (config.autoRetry && isRunning) {
-          const retryTime = config.retryInterval * 60 * 1000;
-          updateOverlayMessage(`Thử lại sau ${config.retryInterval} phút...`);
+        // Always retry (1 attempt per day)
+        if (isRunning) {
+          const retryHours = 24; // 1 day
+          const retryTime = retryHours * 60 * 60 * 1000; // 24 hours in milliseconds
+          const nextAttemptTime = new Date(Date.now() + retryTime);
+
+          console.log(`⏰ Will retry in ${retryHours} hours (${nextAttemptTime.toLocaleString()})`);
+          updateOverlayMessage(`Thử lại vào ${nextAttemptTime.toLocaleTimeString()} ngày ${nextAttemptTime.toLocaleDateString()}`);
 
           await sleep(retryTime);
 
           if (isRunning) {
+            console.log('🔄 Retrying now...');
             // Reload page and retry
             window.location.reload();
           }
@@ -291,20 +298,31 @@
       }
 
     } catch (error) {
-      console.error('Bot error:', error);
-      updateOverlayMessage('Lỗi: ' + error.message);
-      updateStatus('error', 'Lỗi');
+      console.error('💥 BOT ERROR - Critical failure:');
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('Error details:', error);
 
-      // Send Telegram notification
-      await sendTelegramNotification(false, 'Lỗi: ' + error.message);
+      updateOverlayMessage('❌ Lỗi: ' + error.message);
+      updateStatus('error', 'Lỗi: ' + error.message);
 
-      // Retry if enabled
-      if (config.autoRetry && isRunning) {
-        const retryTime = config.retryInterval * 60 * 1000;
-        updateOverlayMessage(`Thử lại sau ${config.retryInterval} phút...`);
+      // Send detailed Telegram notification
+      const errorDetails = `Lỗi: ${error.message}\n\nStack: ${error.stack}`;
+      await sendTelegramNotification(false, errorDetails);
+
+      // Always retry (1 attempt per day)
+      if (isRunning) {
+        const retryHours = 24; // 1 day
+        const retryTime = retryHours * 60 * 60 * 1000;
+        const nextAttemptTime = new Date(Date.now() + retryTime);
+
+        console.log(`⏰ Error occurred, will retry in ${retryHours} hours (${nextAttemptTime.toLocaleString()})`);
+        updateOverlayMessage(`Lỗi xảy ra. Thử lại vào ${nextAttemptTime.toLocaleTimeString()} ngày ${nextAttemptTime.toLocaleDateString()}`);
+
         await sleep(retryTime);
 
         if (isRunning) {
+          console.log('🔄 Retrying after error...');
           window.location.reload();
         }
       } else {
@@ -315,96 +333,115 @@
 
   // Fill input with human-like typing
   async function fillInput(selector, value) {
-    const input = await waitForElement(selector);
+    try {
+      console.log(`📝 Attempting to find input: ${selector}`);
+      const input = await waitForElement(selector);
 
-    if (!input) {
-      throw new Error(`Element not found: ${selector}`);
-    }
-
-    // Highlight element
-    input.classList.add('sjc-bot-highlight');
-
-    // Click to focus
-    await humanLikeClick(input);
-    await randomDelay(200, 500);
-
-    // Clear existing value
-    input.value = '';
-
-    // Type with delays
-    if (config.naturalTyping) {
-      for (let char of value) {
-        input.value += char;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        await randomDelay(80, 150);
+      if (!input) {
+        throw new Error(`Element not found: ${selector}`);
       }
-    } else {
-      input.value = value;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    }
 
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    input.classList.remove('sjc-bot-highlight');
+      console.log(`✓ Input found, filling with value: ${value.substring(0, 3)}...`);
+
+      // Highlight element
+      input.classList.add('sjc-bot-highlight');
+
+      // Click to focus
+      await humanLikeClick(input);
+      await randomDelay(200, 500);
+
+      // Clear existing value
+      input.value = '';
+
+      // Type with delays
+      if (config.naturalTyping) {
+        for (let char of value) {
+          input.value += char;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          await randomDelay(80, 150);
+        }
+      } else {
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      input.classList.remove('sjc-bot-highlight');
+
+      console.log(`✓ Input filled successfully`);
+    } catch (error) {
+      console.error(`❌ Error filling input ${selector}:`, error.message);
+      console.error('Stack trace:', error.stack);
+      throw error; // Re-throw to be caught by runBot()
+    }
   }
 
   // Select dropdown option (supports regular and Select2 dropdowns)
   async function selectDropdown(selector, value) {
-    // Try multiple selectors
-    const selectors = selector.split(',').map(s => s.trim());
-    let select = null;
+    try {
+      console.log(`📋 Attempting to select dropdown: ${selector}`);
 
-    for (const sel of selectors) {
-      select = await waitForElement(sel, 3000);
-      if (select) {
-        console.log(`Found dropdown with selector: ${sel}`);
-        break;
-      }
-    }
+      // Try multiple selectors
+      const selectors = selector.split(',').map(s => s.trim());
+      let select = null;
 
-    if (!select) {
-      throw new Error(`Dropdown not found: ${selector}`);
-    }
-
-    console.log(`Dropdown found, selecting option: "${value}"`);
-
-    // Highlight element
-    select.classList.add('sjc-bot-highlight');
-
-    // Find matching option
-    const options = Array.from(select.options);
-    console.log(`Available options:`, options.map(opt => ({ value: opt.value, text: opt.text })));
-
-    const option = options.find(opt =>
-      opt.text.includes(value) ||
-      opt.value === value ||
-      opt.text.trim() === value.trim()
-    );
-
-    if (option) {
-      console.log(`Found matching option:`, { value: option.value, text: option.text });
-
-      // Set value
-      select.value = option.value;
-
-      // Trigger change events (for both regular selects and Select2)
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      select.dispatchEvent(new Event('select2:select', { bubbles: true }));
-
-      // If jQuery and Select2 are available, use them
-      if (typeof jQuery !== 'undefined' && jQuery(select).data('select2')) {
-        console.log('Using jQuery Select2 API...');
-        jQuery(select).val(option.value).trigger('change');
+      for (const sel of selectors) {
+        select = await waitForElement(sel, 3000);
+        if (select) {
+          console.log(`✓ Found dropdown with selector: ${sel}`);
+          break;
+        }
       }
 
-      console.log(`✓ Dropdown value set to: ${option.value}`);
-    } else {
-      console.error(`Option not found for value: "${value}"`);
-      console.error(`Available options:`, options.map(opt => opt.text));
-      throw new Error(`Option not found: ${value}`);
-    }
+      if (!select) {
+        throw new Error(`Dropdown not found with any selector: ${selector}`);
+      }
 
-    await randomDelay(500, 1000);
-    select.classList.remove('sjc-bot-highlight');
+      console.log(`Dropdown found, selecting option: "${value}"`);
+
+      // Highlight element
+      select.classList.add('sjc-bot-highlight');
+
+      // Find matching option
+      const options = Array.from(select.options);
+      console.log(`Available options (${options.length}):`, options.map(opt => ({ value: opt.value, text: opt.text })));
+
+      const option = options.find(opt =>
+        opt.text.includes(value) ||
+        opt.value === value ||
+        opt.text.trim() === value.trim()
+      );
+
+      if (option) {
+        console.log(`✓ Found matching option:`, { value: option.value, text: option.text });
+
+        // Set value
+        select.value = option.value;
+
+        // Trigger change events (for both regular selects and Select2)
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        select.dispatchEvent(new Event('select2:select', { bubbles: true }));
+
+        // If jQuery and Select2 are available, use them
+        if (typeof jQuery !== 'undefined' && jQuery(select).data('select2')) {
+          console.log('Using jQuery Select2 API...');
+          jQuery(select).val(option.value).trigger('change');
+        }
+
+        console.log(`✓ Dropdown value set to: ${option.value}`);
+      } else {
+        console.error(`❌ Option not found for value: "${value}"`);
+        console.error(`Available options:`, options.map(opt => opt.text));
+        throw new Error(`Option not found in dropdown: "${value}". Available: ${options.map(o => o.text).join(', ')}`);
+      }
+
+      await randomDelay(500, 1000);
+      select.classList.remove('sjc-bot-highlight');
+    } catch (error) {
+      console.error(`❌ Error selecting dropdown ${selector}:`, error.message);
+      console.error('Stack trace:', error.stack);
+      throw error; // Re-throw to be caught by runBot()
+    }
   }
 
   // Click reCAPTCHA checkbox (inside iframe)
