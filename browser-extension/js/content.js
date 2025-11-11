@@ -752,12 +752,10 @@
 
     const now = new Date();
     const targetTime = new Date();
-    targetTime.setHours(hours, minutes, 0, 0);
 
-    // If target time has already passed today, schedule for tomorrow
-    if (targetTime <= now) {
-      targetTime.setDate(targetTime.getDate() + 1);
-    }
+    // Always schedule for tomorrow (since we just successfully registered today)
+    targetTime.setDate(targetTime.getDate() + 1);
+    targetTime.setHours(hours, minutes, 0, 0);
 
     // Calculate milliseconds until target time
     const waitTime = targetTime.getTime() - now.getTime();
