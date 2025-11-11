@@ -263,10 +263,27 @@
         // Send Telegram notification
         await sendTelegramNotification(true, 'Đăng ký slot thành công!');
 
-        // Show success message
-        setTimeout(() => {
-          stopBot();
-        }, 5000);
+        // Wait 24 hours for next day's registration (limit: 1 per day)
+        if (isRunning) {
+          const retryHours = 24;
+          const retryTime = retryHours * 60 * 60 * 1000; // 24 hours
+          const nextAttemptTime = new Date(Date.now() + retryTime);
+
+          console.log(`⏰ Success! Next registration in ${retryHours} hours (${nextAttemptTime.toLocaleString()})`);
+          updateOverlayMessage(`✅ Thành công! Đăng ký tiếp theo vào ${nextAttemptTime.toLocaleTimeString()} ngày ${nextAttemptTime.toLocaleDateString()}`);
+
+          await sleep(retryTime);
+
+          if (isRunning) {
+            console.log('🔄 Starting tomorrow\'s registration...');
+            window.location.reload();
+          }
+        } else {
+          // If bot was stopped, just show success for 5 seconds
+          setTimeout(() => {
+            stopBot();
+          }, 5000);
+        }
 
       } else {
         console.error('❌ Registration failed:', result.error);
@@ -276,14 +293,14 @@
         // Send Telegram notification
         await sendTelegramNotification(false, result.error);
 
-        // Always retry (1 attempt per day)
+        // Retry quickly until successful
         if (isRunning) {
-          const retryHours = 24; // 1 day
-          const retryTime = retryHours * 60 * 60 * 1000; // 24 hours in milliseconds
+          const retryMinutes = config.retryInterval || 5; // Default 5 minutes
+          const retryTime = retryMinutes * 60 * 1000;
           const nextAttemptTime = new Date(Date.now() + retryTime);
 
-          console.log(`⏰ Will retry in ${retryHours} hours (${nextAttemptTime.toLocaleString()})`);
-          updateOverlayMessage(`Thử lại vào ${nextAttemptTime.toLocaleTimeString()} ngày ${nextAttemptTime.toLocaleDateString()}`);
+          console.log(`⏰ Will retry in ${retryMinutes} minutes (${nextAttemptTime.toLocaleString()})`);
+          updateOverlayMessage(`Thử lại vào ${nextAttemptTime.toLocaleTimeString()}`);
 
           await sleep(retryTime);
 
@@ -310,14 +327,14 @@
       const errorDetails = `Lỗi: ${error.message}\n\nStack: ${error.stack}`;
       await sendTelegramNotification(false, errorDetails);
 
-      // Always retry (1 attempt per day)
+      // Retry quickly until successful
       if (isRunning) {
-        const retryHours = 24; // 1 day
-        const retryTime = retryHours * 60 * 60 * 1000;
+        const retryMinutes = config.retryInterval || 5; // Default 5 minutes
+        const retryTime = retryMinutes * 60 * 1000;
         const nextAttemptTime = new Date(Date.now() + retryTime);
 
-        console.log(`⏰ Error occurred, will retry in ${retryHours} hours (${nextAttemptTime.toLocaleString()})`);
-        updateOverlayMessage(`Lỗi xảy ra. Thử lại vào ${nextAttemptTime.toLocaleTimeString()} ngày ${nextAttemptTime.toLocaleDateString()}`);
+        console.log(`⏰ Error occurred, will retry in ${retryMinutes} minutes (${nextAttemptTime.toLocaleString()})`);
+        updateOverlayMessage(`Lỗi xảy ra. Thử lại vào ${nextAttemptTime.toLocaleTimeString()}`);
 
         await sleep(retryTime);
 
