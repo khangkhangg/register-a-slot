@@ -211,37 +211,40 @@
       console.log('✓ Login processed');
 
       // Step 4: Select area
-      console.log('📝 Step 4: Selecting area...');
+      console.log('📝 Step 4: Selecting area (Khu vực)...');
       updateOverlayMessage('Bước 4: Chọn khu vực...');
-      await selectDropdown('select[name="area"], select[id*="area"], select[name="province"]', config.area);
+      await selectDropdown('#id_area, select[name="Area"]', config.area);
       console.log('✓ Area selected successfully');
-      await randomDelay(800, 1500);
+
+      // Wait for store dropdown to populate
+      console.log('⏳ Waiting for transaction points to load...');
+      await randomDelay(1000, 2000);
 
       // Step 5: Select transaction point
-      console.log('📝 Step 5: Selecting transaction point...');
+      console.log('📝 Step 5: Selecting transaction point (Điểm giao dịch)...');
       updateOverlayMessage('Bước 5: Chọn điểm giao dịch...');
-      await selectDropdown('select[name="point"], select[id*="point"], select[name="branch"]', config.transactionPoint);
+      await selectDropdown('#id_store, select[name="store"]', config.transactionPoint);
       console.log('✓ Transaction point selected successfully');
       await randomDelay(800, 1500);
 
       // Step 6: Wait before bot checkbox
       const waitTime = config.beforeBotCheckDelay * 1000;
-      console.log(`⏳ Step 6: Waiting ${config.beforeBotCheckDelay} seconds before bot check...`);
+      console.log(`⏳ Step 6: Waiting ${config.beforeBotCheckDelay} seconds before reCAPTCHA...`);
       updateOverlayMessage(`Bước 6: Chờ ${config.beforeBotCheckDelay} giây...`);
       await sleep(waitTime);
       console.log('✓ Wait complete');
 
-      // Step 7: Click bot checkbox
-      console.log('📝 Step 7: Clicking bot checkbox...');
-      updateOverlayMessage('Bước 7: Click checkbox "Not bot"...');
-      await clickCheckbox('input[type="checkbox"]');
-      console.log('✓ Checkbox clicked successfully');
-      await randomDelay(1000, 2000);
+      // Step 7: Click reCAPTCHA checkbox
+      console.log('📝 Step 7: Clicking reCAPTCHA checkbox...');
+      updateOverlayMessage('Bước 7: Click "I\'m not a robot"...');
+      await clickRecaptcha();
+      console.log('✓ reCAPTCHA clicked successfully');
+      await randomDelay(2000, 3000);
 
       // Step 8: Submit form
       console.log('📝 Step 8: Submitting registration form...');
       updateOverlayMessage('Bước 8: Gửi form đăng ký...');
-      await clickButton('button[type="submit"], input[type="submit"], button.register, button#register, .btn-register, .btn-submit');
+      await clickButton('#register_form_submit, button[type="submit"]');
       console.log('✓ Form submitted');
       await randomDelay(2000, 4000);
 
@@ -344,33 +347,127 @@
     input.classList.remove('sjc-bot-highlight');
   }
 
-  // Select dropdown option
+  // Select dropdown option (supports regular and Select2 dropdowns)
   async function selectDropdown(selector, value) {
-    const select = await waitForElement(selector);
+    // Try multiple selectors
+    const selectors = selector.split(',').map(s => s.trim());
+    let select = null;
+
+    for (const sel of selectors) {
+      select = await waitForElement(sel, 3000);
+      if (select) {
+        console.log(`Found dropdown with selector: ${sel}`);
+        break;
+      }
+    }
 
     if (!select) {
       throw new Error(`Dropdown not found: ${selector}`);
     }
 
+    console.log(`Dropdown found, selecting option: "${value}"`);
+
     // Highlight element
     select.classList.add('sjc-bot-highlight');
 
-    // Click to open
-    await humanLikeClick(select);
-    await randomDelay(300, 700);
-
-    // Set value
+    // Find matching option
     const options = Array.from(select.options);
-    const option = options.find(opt => opt.text.includes(value) || opt.value === value);
+    console.log(`Available options:`, options.map(opt => ({ value: opt.value, text: opt.text })));
+
+    const option = options.find(opt =>
+      opt.text.includes(value) ||
+      opt.value === value ||
+      opt.text.trim() === value.trim()
+    );
 
     if (option) {
+      console.log(`Found matching option:`, { value: option.value, text: option.text });
+
+      // Set value
       select.value = option.value;
+
+      // Trigger change events (for both regular selects and Select2)
       select.dispatchEvent(new Event('change', { bubbles: true }));
+      select.dispatchEvent(new Event('select2:select', { bubbles: true }));
+
+      // If jQuery and Select2 are available, use them
+      if (typeof jQuery !== 'undefined' && jQuery(select).data('select2')) {
+        console.log('Using jQuery Select2 API...');
+        jQuery(select).val(option.value).trigger('change');
+      }
+
+      console.log(`✓ Dropdown value set to: ${option.value}`);
     } else {
-      console.warn(`Option not found: ${value}`);
+      console.error(`Option not found for value: "${value}"`);
+      console.error(`Available options:`, options.map(opt => opt.text));
+      throw new Error(`Option not found: ${value}`);
     }
 
+    await randomDelay(500, 1000);
     select.classList.remove('sjc-bot-highlight');
+  }
+
+  // Click reCAPTCHA checkbox (inside iframe)
+  async function clickRecaptcha() {
+    console.log('Looking for reCAPTCHA...');
+
+    // Wait for reCAPTCHA container
+    const recaptchaContainer = await waitForElement('#g-recaptcha, .g-recaptcha', 5000);
+    if (!recaptchaContainer) {
+      throw new Error('reCAPTCHA container not found');
+    }
+
+    console.log('reCAPTCHA container found, looking for iframe...');
+
+    // Wait a bit for iframe to load
+    await randomDelay(1000, 2000);
+
+    // Find the reCAPTCHA iframe
+    const iframes = document.querySelectorAll('iframe[src*="recaptcha"], iframe[title*="reCAPTCHA"]');
+    console.log(`Found ${iframes.length} reCAPTCHA iframes`);
+
+    let checkbox = null;
+
+    for (const iframe of iframes) {
+      try {
+        console.log('Checking iframe:', iframe.src);
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+        // Look for the checkbox inside the iframe
+        checkbox = iframeDoc.querySelector('.recaptcha-checkbox-border, #recaptcha-anchor');
+
+        if (checkbox) {
+          console.log('✓ Found reCAPTCHA checkbox inside iframe!');
+
+          // Move mouse to iframe area
+          const rect = iframe.getBoundingClientRect();
+          console.log('reCAPTCHA iframe position:', rect);
+
+          // Click the checkbox
+          await randomDelay(500, 1000);
+          checkbox.click();
+          console.log('✓ reCAPTCHA checkbox clicked');
+          break;
+        }
+      } catch (error) {
+        console.log('Could not access iframe (probably cross-origin):', error.message);
+      }
+    }
+
+    if (!checkbox) {
+      // Fallback: Try to click the iframe itself
+      console.log('Could not access checkbox inside iframe, trying to click iframe...');
+      const mainIframe = iframes[0];
+      if (mainIframe) {
+        await humanLikeClick(mainIframe);
+        console.log('✓ Clicked reCAPTCHA iframe');
+      } else {
+        throw new Error('Could not find or click reCAPTCHA');
+      }
+    }
+
+    // Wait for reCAPTCHA to process
+    await randomDelay(1000, 2000);
   }
 
   // Click checkbox
